@@ -26,7 +26,7 @@ jobs:
       uses: Princetopia/claude-security-autofixer@main
       with:
         alert-number: ${{ github.event.inputs.alert-number }}
-        github-token: ${{ secrets.GH_PAT }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
         anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
         base-ref: main
 
