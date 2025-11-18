@@ -1,0 +1,32 @@
+name: "Test Security Autofixer"
+
+on:
+  workflow_dispatch:
+    inputs:
+      alert-number:
+        description: 'Security alert number to fix'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: read
+
+jobs:
+  fix-vulnerability:
+    name: Fix Security Alert
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Run Claude Security Autofixer
+      uses: Princetopia/claude-security-autofixer@main
+      with:
+        alert-number: ${{ github.event.inputs.alert-number }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+        base-ref: main
+
