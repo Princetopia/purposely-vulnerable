@@ -33,11 +33,11 @@ def get_user(username):
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     
-    # VULNERABLE CODE: String concatenation in SQL query
-    # An attacker could use: /user/admin' OR '1'='1
-    query = "SELECT * FROM users WHERE username = '" + username + "'"
-    
-    cursor.execute(query)
+    # FIXED: Using parameterized query to prevent SQL injection
+    # The ? placeholder ensures username is properly escaped
+    query = "SELECT * FROM users WHERE username = ?"
+
+    cursor.execute(query, (username,))
     result = cursor.fetchone()
     conn.close()
     
