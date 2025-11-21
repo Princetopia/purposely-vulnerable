@@ -6,7 +6,7 @@ on:
       alert-number:
         description: 'Security alert number to fix'
         required: true
-        type: string
+        type: number
 
 permissions:
   contents: write
