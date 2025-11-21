@@ -21,12 +21,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT }}
     
     - name: Run Claude Security Autofixer
       uses: Princetopia/claude-security-autofixer@main
       with:
         alert-number: ${{ github.event.inputs.alert-number }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.GH_PAT }}
         anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
         base-ref: main
 
