@@ -61,10 +61,10 @@ def search_users():
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     
-    # VULNERABLE CODE: Direct string formatting in SQL query
-    query = f"SELECT username, email FROM users WHERE username LIKE '%{search_term}%'"
-    
-    cursor.execute(query)
+    # FIXED: Using parameterized query to prevent SQL injection
+    query = "SELECT username, email FROM users WHERE username LIKE ?"
+
+    cursor.execute(query, (f'%{search_term}%',))
     results = cursor.fetchall()
     conn.close()
     
