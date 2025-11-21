@@ -15,27 +15,11 @@ permissions:
 
 jobs:
   fix-vulnerability:
-    name: Fix Security Alert
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.GH_PAT }}
-    
-    - name: Checkout private action
-      uses: actions/checkout@v4
-      with:
-        repository: Princetopia/claude-security-autofixer
-        token: ${{ secrets.GH_PAT }}
-        path: .github/actions/claude-security-autofixer
-    
-    - name: Run Claude Security Autofixer
-      uses: ./.github/actions/claude-security-autofixer
-      with:
-        alert-number: ${{ github.event.inputs.alert-number }}
-        github-token: ${{ secrets.GH_PAT }}
-        anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-        base-ref: main
+    uses: Princetopia/claude-security-autofixer/.github/workflows/fix-vulnerability.yml@main
+    with:
+      alert-number: ${{ inputs.alert-number }}
+      base-ref: main
+    secrets:
+      github-token: ${{ secrets.GH_PAT }}
+      anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
