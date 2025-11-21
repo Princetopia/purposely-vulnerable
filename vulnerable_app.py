@@ -54,17 +54,18 @@ def get_user(username):
 @app.route('/search')
 def search_users():
     """
-    VULNERABLE: SQL Injection vulnerability via query parameter
+    Search users by username using parameterized queries (FIXED)
     """
     search_term = request.args.get('q', '')
     
     conn = sqlite3.connect('users.db')
     cursor = conn.cursor()
     
-    # VULNERABLE CODE: Direct string formatting in SQL query
-    query = f"SELECT username, email FROM users WHERE username LIKE '%{search_term}%'"
+    # FIXED: Using parameterized query to prevent SQL injection
+    # The ? placeholder ensures search_term is properly escaped
+    query = "SELECT username, email FROM users WHERE username LIKE ?"
     
-    cursor.execute(query)
+    cursor.execute(query, (f'%{search_term}%',))
     results = cursor.fetchall()
     conn.close()
     

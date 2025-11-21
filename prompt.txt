@@ -1,0 +1,292 @@
+You are fixing a security vulnerability in a codebase.
+
+# Security Alert Details
+
+Alert #2 from GitHub Code Scanning:
+
+```json
+{
+  "number": 2,
+  "created_at": "2025-11-18T04:05:33Z",
+  "updated_at": "2025-11-18T04:05:33Z",
+  "url": "https://api.github.com/repos/Princetopia/purposely-vulnerable/code-scanning/alerts/2",
+  "html_url": "https://github.com/Princetopia/purposely-vulnerable/security/code-scanning/2",
+  "state": "open",
+  "fixed_at": null,
+  "dismissed_by": null,
+  "dismissed_at": null,
+  "dismissed_reason": null,
+  "dismissed_comment": null,
+  "rule": {
+    "id": "py/sql-injection",
+    "severity": "error",
+    "description": "SQL query built from user-controlled sources",
+    "name": "py/sql-injection",
+    "tags": [
+      "external/cwe/cwe-089",
+      "security"
+    ],
+    "full_description": "Building a SQL query from user-controlled sources is vulnerable to insertion of malicious SQL code by the user.",
+    "help": "# SQL query built from user-controlled sources\nIf a database query (such as a SQL or NoSQL query) is built from user-provided data without sufficient sanitization, a user may be able to run malicious database queries.\n\nThis also includes using the `TextClause` class in the `[SQLAlchemy](https://pypi.org/project/SQLAlchemy/)` PyPI package, which is used to represent a literal SQL fragment and is inserted directly into the final SQL when used in a query built using the ORM.\n\n\n## Recommendation\nMost database connector libraries offer a way of safely embedding untrusted data into a query by means of query parameters or prepared statements.\n\n\n## Example\nIn the following snippet, a user is fetched from the database using three different queries.\n\nIn the first case, the query string is built by directly using string formatting from a user-supplied request parameter. The parameter may include quote characters, so this code is vulnerable to a SQL injection attack.\n\nIn the second case, the user-supplied request attribute is passed to the database using query parameters. The database connector library will take care of escaping and inserting quotes as needed.\n\nIn the third case, the placeholder in the SQL string has been manually quoted. Since most databaseconnector libraries will insert their own quotes, doing so yourself will make the code vulnerable to SQL injection attacks. In this example, if `username` was `; DROP ALL TABLES -- `, the final SQL query would be `SELECT * FROM users WHERE username = ''; DROP ALL TABLES -- ''`\n\n\n```python\nfrom django.conf.urls import url\nfrom django.db import connection\n\n\ndef show_user(request, username):\n    with connection.cursor() as cursor:\n        # BAD -- Using string formatting\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\" % username)\n        user = cursor.fetchone()\n\n        # GOOD -- Using parameters\n        cursor.execute(\"SELECT * FROM users WHERE username = %s\", username)\n        user = cursor.fetchone()\n\n        # BAD -- Manually quoting placeholder (%s)\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\", username)\n        user = cursor.fetchone()\n\nurlpatterns = [url(r'^users/(?P<username>[^/]+)$', show_user)]\n\n```\n\n## References\n* Wikipedia: [SQL injection](https://en.wikipedia.org/wiki/SQL_injection).\n* OWASP: [SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).\n* [SQLAlchemy documentation for TextClause](https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.text.params.text).\n* Common Weakness Enumeration: [CWE-89](https://cwe.mitre.org/data/definitions/89.html).\n",
+    "security_severity_level": "high"
+  },
+  "tool": {
+    "name": "CodeQL",
+    "guid": null,
+    "version": "2.23.5"
+  },
+  "most_recent_instance": {
+    "ref": "refs/heads/main",
+    "analysis_key": ".github/workflows/codeql.yml:analyze",
+    "environment": "{}",
+    "category": "/language:python",
+    "state": "open",
+    "commit_sha": "9935ab13f8cb78d1c379fe3b6d5e561730ad9617",
+    "message": {
+      "text": "This SQL query depends on a user-provided value."
+    },
+    "location": {
+      "path": "vulnerable_app.py",
+      "start_line": 67,
+      "end_line": 67,
+      "start_column": 20,
+      "end_column": 25
+    },
+    "classifications": []
+  },
+  "instances_url": "https://api.github.com/repos/Princetopia/purposely-vulnerable/code-scanning/alerts/2/instances",
+  "dismissal_approved_by": null,
+  "assignees": []
+}
+```
+
+# Security Guidance
+
+# Vulnerability Remediation Skill
+
+This skill provides security-focused guidance for fixing code vulnerabilities while preserving functionality.
+
+## Core Principles
+
+1. **Security First**: Always prioritize security over convenience
+2. **Preserve Functionality**: Keep the original behavior while fixing the vulnerability
+3. **Follow Best Practices**: Use language-specific security patterns
+4. **Clear Documentation**: Document what was fixed and why
+
+## Common Vulnerability Patterns
+
+### SQL Injection
+
+**Problem**: Direct string concatenation or formatting in SQL queries
+```python
+# VULNERABLE
+query = f"SELECT * FROM users WHERE username = '{username}'"
+query = "SELECT * FROM users WHERE id = " + user_id
+```
+
+**Solution**: Use parameterized queries
+```python
+# SECURE
+cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+```
+
+**Python-specific**:
+- sqlite3: Use `?` placeholders and tuples
+- psycopg2: Use `%s` placeholders and tuples
+- SQLAlchemy: Use bound parameters
+
+### Cross-Site Scripting (XSS)
+
+**Problem**: Unescaped user input in HTML output
+
+**Solution**:
+- Use template engine auto-escaping (Jinja2, Django templates)
+- Explicitly escape user input: `html.escape()`, `markupsafe.escape()`
+- Set proper Content-Security-Policy headers
+
+### Path Traversal
+
+**Problem**: User-controlled file paths
+```python
+# VULNERABLE
+filepath = "/var/data/" + user_input
+open(filepath, 'r')
+```
+
+**Solution**: Validate and sanitize paths
+```python
+# SECURE
+from pathlib import Path
+base_dir = Path("/var/data/")
+safe_path = (base_dir / user_input).resolve()
+if not safe_path.is_relative_to(base_dir):
+    raise ValueError("Invalid path")
+```
+
+### Command Injection
+
+**Problem**: Shell execution with user input
+```python
+# VULNERABLE
+os.system(f"ping {host}")
+subprocess.call(f"convert {filename}", shell=True)
+```
+
+**Solution**: Use array arguments, avoid shell=True
+```python
+# SECURE
+subprocess.run(["ping", "-c", "1", host], check=True)
+subprocess.run(["convert", filename], check=True)
+```
+
+### Insecure Deserialization
+
+**Problem**: Unpickling untrusted data
+
+**Solution**:
+- Use JSON instead of pickle when possible
+- Validate data structure before deserializing
+- Use safe deserialization libraries
+
+### Hardcoded Secrets
+
+**Problem**: API keys, passwords in source code
+
+**Solution**:
+- Use environment variables
+- Use secret management services
+- Use `.env` files (excluded from git)
+
+## Python Security Best Practices
+
+### Input Validation
+- Always validate user input
+- Use type hints and validation libraries (pydantic)
+- Whitelist valid inputs rather than blacklist
+
+### Authentication & Authorization
+- Use established libraries (django.contrib.auth, Flask-Login)
+- Hash passwords with bcrypt, argon2, or PBKDF2
+- Never store passwords in plain text
+- Use secure session management
+
+### Cryptography
+- Use `secrets` module for tokens and random values
+- Use established crypto libraries (cryptography.io)
+- Never implement custom crypto algorithms
+
+### Web Security Headers
+- Set Content-Security-Policy
+- Use HTTPS only (HSTS)
+- Set X-Content-Type-Options: nosniff
+- Set X-Frame-Options: DENY or SAMEORIGIN
+
+## Fix Workflow
+
+When fixing a vulnerability:
+
+1. **Identify the vulnerability type**
+2. **Find all instances** of the vulnerable pattern
+3. **Apply the secure pattern** from this guide
+4. **Verify functionality** is preserved
+5. **Test the fix** mentally or describe how to test
+6. **Document the change** in commit message
+
+## Language-Specific Imports
+
+Always prefer these secure libraries:
+
+### Python
+```python
+# For SQL
+import sqlite3  # Use parameterized queries
+from sqlalchemy import text  # Use bound parameters
+
+# For web security
+from markupsafe import escape
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# For file operations
+from pathlib import Path  # Safer path handling
+
+# For subprocess
+import subprocess  # Use with array args, avoid shell=True
+
+# For crypto
+import secrets  # Cryptographically secure random
+from cryptography.fernet import Fernet  # Symmetric encryption
+
+# For input validation
+from typing import *  # Type hints
+import pydantic  # Data validation
+```
+
+## Commit Message Format
+
+Use this format for fix commits:
+```
+Fix security alert #<number>: <vulnerability-type>
+
+- <Brief description of the vulnerability>
+- <What was changed>
+- <Why it's now secure>
+
+Addresses: <link-to-alert>
+```
+
+## Additional Resources
+
+- OWASP Top 10: https://owasp.org/Top10/
+- CWE (Common Weakness Enumeration)
+- Language-specific security guides
+
+---
+
+## Output Format for Automated Fixes
+
+**IMPORTANT**: After successfully fixing the vulnerability, you MUST output a JSON object with these exact fields:
+
+```json
+{
+  "title": "Brief PR title (50 chars max)",
+  "summary": "One-sentence summary of what was fixed",
+  "vulnerability": "Type/name of the vulnerability (e.g., SQL Injection)",
+  "impact": "What attackers could do before this fix",
+  "fix_description": "What you changed (2-3 sentences)",
+  "technical_details": "How the fix prevents the vulnerability",
+  "testing_notes": "How to verify the fix works"
+}
+```
+
+### Example Output
+
+```json
+{
+  "title": "Fix SQL injection in user lookup",
+  "summary": "Replaced string concatenation with parameterized queries",
+  "vulnerability": "SQL Injection",
+  "impact": "Attackers could bypass authentication or extract sensitive data by injecting malicious SQL code",
+  "fix_description": "Changed the query from string concatenation to use ? placeholders and pass the username parameter as a tuple to cursor.execute()",
+  "technical_details": "Parameterized queries separate SQL code from user data, ensuring user input is treated as data only and cannot be executed as SQL code",
+  "testing_notes": "Test with malicious input like admin' OR '1'='1 to verify it's treated as a literal username string and doesn't bypass authentication"
+}
+```
+
+Output this JSON AFTER you've made all code changes. The JSON will be parsed and used to generate a professional pull request description.
+
+
+
+# Your Task
+
+1. Review the security alert JSON above to understand the vulnerability
+2. Identify the vulnerable code based on the location information in the alert
+3. Fix the security issue following the best practices from the security guidance
+4. Preserve all existing functionality - the code should work the same way but securely
+5. After making all fixes, output the JSON object as specified in the "Output Format for Automated Fixes" section
+
+**Important**: Output ONLY valid JSON at the end. This JSON will be used to generate the pull request description.
+
+Fix the vulnerability now.
+
+
