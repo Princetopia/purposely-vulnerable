@@ -1,0 +1,60 @@
+Use the vulnerability-remediation skill to fix the following code security issue in the target-repo directory:
+
+## Security Alert #2
+
+```json
+{
+  "number": 2,
+  "created_at": "2025-11-18T04:05:33Z",
+  "updated_at": "2025-11-18T04:05:33Z",
+  "url": "https://api.github.com/repos/Princetopia/purposely-vulnerable/code-scanning/alerts/2",
+  "html_url": "https://github.com/Princetopia/purposely-vulnerable/security/code-scanning/2",
+  "state": "open",
+  "fixed_at": null,
+  "dismissed_by": null,
+  "dismissed_at": null,
+  "dismissed_reason": null,
+  "dismissed_comment": null,
+  "rule": {
+    "id": "py/sql-injection",
+    "severity": "error",
+    "description": "SQL query built from user-controlled sources",
+    "name": "py/sql-injection",
+    "tags": [
+      "external/cwe/cwe-089",
+      "security"
+    ],
+    "full_description": "Building a SQL query from user-controlled sources is vulnerable to insertion of malicious SQL code by the user.",
+    "help": "# SQL query built from user-controlled sources\nIf a database query (such as a SQL or NoSQL query) is built from user-provided data without sufficient sanitization, a user may be able to run malicious database queries.\n\nThis also includes using the `TextClause` class in the `[SQLAlchemy](https://pypi.org/project/SQLAlchemy/)` PyPI package, which is used to represent a literal SQL fragment and is inserted directly into the final SQL when used in a query built using the ORM.\n\n\n## Recommendation\nMost database connector libraries offer a way of safely embedding untrusted data into a query by means of query parameters or prepared statements.\n\n\n## Example\nIn the following snippet, a user is fetched from the database using three different queries.\n\nIn the first case, the query string is built by directly using string formatting from a user-supplied request parameter. The parameter may include quote characters, so this code is vulnerable to a SQL injection attack.\n\nIn the second case, the user-supplied request attribute is passed to the database using query parameters. The database connector library will take care of escaping and inserting quotes as needed.\n\nIn the third case, the placeholder in the SQL string has been manually quoted. Since most databaseconnector libraries will insert their own quotes, doing so yourself will make the code vulnerable to SQL injection attacks. In this example, if `username` was `; DROP ALL TABLES -- `, the final SQL query would be `SELECT * FROM users WHERE username = ''; DROP ALL TABLES -- ''`\n\n\n```python\nfrom django.conf.urls import url\nfrom django.db import connection\n\n\ndef show_user(request, username):\n    with connection.cursor() as cursor:\n        # BAD -- Using string formatting\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\" % username)\n        user = cursor.fetchone()\n\n        # GOOD -- Using parameters\n        cursor.execute(\"SELECT * FROM users WHERE username = %s\", username)\n        user = cursor.fetchone()\n\n        # BAD -- Manually quoting placeholder (%s)\n        cursor.execute(\"SELECT * FROM users WHERE username = '%s'\", username)\n        user = cursor.fetchone()\n\nurlpatterns = [url(r'^users/(?P<username>[^/]+)$', show_user)]\n\n```\n\n## References\n* Wikipedia: [SQL injection](https://en.wikipedia.org/wiki/SQL_injection).\n* OWASP: [SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html).\n* [SQLAlchemy documentation for TextClause](https://docs.sqlalchemy.org/en/14/core/sqlelement.html#sqlalchemy.sql.expression.text.params.text).\n* Common Weakness Enumeration: [CWE-89](https://cwe.mitre.org/data/definitions/89.html).\n",
+    "security_severity_level": "high"
+  },
+  "tool": {
+    "name": "CodeQL",
+    "guid": null,
+    "version": "2.23.5"
+  },
+  "most_recent_instance": {
+    "ref": "refs/heads/main",
+    "analysis_key": ".github/workflows/codeql.yml:analyze",
+    "environment": "{}",
+    "category": "/language:python",
+    "state": "open",
+    "commit_sha": "9935ab13f8cb78d1c379fe3b6d5e561730ad9617",
+    "message": {
+      "text": "This SQL query depends on a user-provided value."
+    },
+    "location": {
+      "path": "vulnerable_app.py",
+      "start_line": 67,
+      "end_line": 67,
+      "start_column": 20,
+      "end_column": 25
+    },
+    "classifications": []
+  },
+  "instances_url": "https://api.github.com/repos/Princetopia/purposely-vulnerable/code-scanning/alerts/2/instances",
+  "dismissal_approved_by": null,
+  "assignees": []
+}
+```
+
