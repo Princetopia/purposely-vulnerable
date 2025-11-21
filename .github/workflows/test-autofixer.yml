@@ -24,8 +24,15 @@ jobs:
       with:
         token: ${{ secrets.GH_PAT }}
     
+    - name: Checkout private action
+      uses: actions/checkout@v4
+      with:
+        repository: Princetopia/claude-security-autofixer
+        token: ${{ secrets.GH_PAT }}
+        path: .github/actions/claude-security-autofixer
+    
     - name: Run Claude Security Autofixer
-      uses: Princetopia/claude-security-autofixer@main
+      uses: ./.github/actions/claude-security-autofixer
       with:
         alert-number: ${{ github.event.inputs.alert-number }}
         github-token: ${{ secrets.GH_PAT }}
